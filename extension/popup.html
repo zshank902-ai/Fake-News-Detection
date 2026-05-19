@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 320px;
+      padding: 20px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      color: white;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .shield-icon {
+      font-size: 24px;
+    }
+    .title {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+    }
+    .analyzer-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      min-height: 80px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #6366f1;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #4f46e5;
+      transform: translateY(-1px);
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+    .fake { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; }
+    .real { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="shield-icon">🛡️</span>
+    <span class="title">The Truth Shield</span>
+  </div>
+  
+  <div class="analyzer-box">
+    <textarea id="newsText" placeholder="Paste news or highlight text on the page..."></textarea>
+  </div>
+
+  <button id="analyzeBtn">Analyze with SOTA AI</button>
+
+  <div id="resultBox" class="result">
+    <div id="resultText" style="font-weight: 700; font-size: 16px;"></div>
+    <div id="confidenceText" style="font-size: 12px; margin-top: 5px; opacity: 0.8;"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

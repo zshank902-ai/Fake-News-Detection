@@ -1,0 +1,38 @@
+# Python environment & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+.venv/
+myenv/
+venv/
+ENV/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Big neural network weights & ZIP archives (exceeding GitHub's 100MB limit)
+*.pt
+*.pth
+*.h5
+*.keras
+*.weights.h5
+*.zip
+final_sota_model/
+models/
+
+# Dataset and logs
+data/
+datasets/
+*.csv
+*.xlsx
+*.txt
+!requirements.txt
+
+# Node / JS dependencies
+node_modules/
+dist/
+.env
+.env.local

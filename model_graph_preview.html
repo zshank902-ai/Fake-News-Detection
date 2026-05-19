@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model Architecture Graph Preview</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        background-color: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 90%;
+        max-width: 1200px;
+      }
+      .mermaid {
+        background: white;
+        display: block;
+      }
+    </style>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "default",
+        securityLevel: "loose",
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+      });
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <h2 style="text-align: center">
+        Fake News Detection: Model Architecture
+      </h2>
+      <pre class="mermaid">
+graph TD
+    subgraph InputLayer [Input Layer]
+        raw["Raw News Text / Social Media Data"]
+    end
+
+    subgraph PreprocessingModule [Preprocessing Module]
+        direction TD
+        tok["Tokenization"]
+        stop["Stopword Removal"]
+        lem["Lemmatization"]
+    end
+
+    subgraph FeatureExtraction [Feature Extraction]
+        bert["BERT Encoder / Word Embeddings"]
+    end
+
+    subgraph CoreProcessing [Core Processing Modules]
+        direction TD
+        cnn["1D CNN Layer (Extracts Local Features and N-grams)"]
+        bilstm["Bi-LSTM Layer (Captures Bidirectional Context)"]
+        attn["Attention Mechanism (Calculates Feature Importance)"]
+    end
+
+    subgraph ClassificationHead [Classification Head]
+        direction TD
+        dense["Dense / Fully Connected Layers"]
+        drop["Dropout Layer (Regularization)"]
+        softmax["Softmax / Sigmoid Activation"]
+    end
+
+    subgraph OutputModule [Output]
+        result["Binary Classification: Real vs. Fake"]
+    end
+
+    raw --> tok
+    tok --> stop
+    stop --> lem
+    lem --> bert
+    
+    bert --> cnn
+    cnn --> bilstm
+    bilstm --> attn
+    
+    attn --> dense
+    dense --> drop
+    drop --> softmax
+    
+    softmax --> result
+
+    classDef inputStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000;
+    classDef preprocStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000;
+    classDef featureStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000;
+    classDef coreStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
+    classDef classStyle fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000;
+    classDef outStyle fill:#eceff1,stroke:#37474f,stroke-width:3px,color:#000;
+
+    class raw inputStyle;
+    class tok,stop,lem preprocStyle;
+    class bert featureStyle;
+    class cnn,bilstm,attn coreStyle;
+    class dense,drop,softmax classStyle;
+    class result outStyle;
+        </pre
+      >
+    </div>
+  </body>
+</html>

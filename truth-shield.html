@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRUTH SHIELD — Neural Defense v3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020408;
+    --surface: rgba(255,255,255,0.03);
+    --surface-hover: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.07);
+    --border-glow: rgba(0,255,180,0.25);
+    --accent: #00ffb4;
+    --accent2: #00c8ff;
+    --accent3: #ff4b6e;
+    --text: #e8edf2;
+    --muted: #5a6a7a;
+    --danger: #ff4b6e;
+    --safe: #00ffb4;
+    --warn: #ffb800;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid rgba(0,255,180,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: left 0.15s ease, top 0.15s ease, transform 0.3s ease;
+    transform: translate(-12px, -12px);
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,180,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,180,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient glow blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+    animation: blobFloat 8s ease-in-out infinite;
+  }
+  .blob-1 { width: 500px; height: 500px; background: var(--accent); top: -100px; left: -100px; }
+  .blob-2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; right: 100px; animation-delay: -3s; }
+  .blob-3 { width: 300px; height: 300px; background: var(--accent3); top: 40%; left: 40%; animation-delay: -5s; opacity: 0.07; }
+
+  @keyframes blobFloat {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(20px, -20px) scale(1.05); }
+  }
+
+  /* Layout */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,255,180,0.05) 0%, transparent 60%);
+  }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .logo-mark {
+    width: 52px; height: 52px;
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,255,180,0.3), inset 0 0 16px rgba(0,255,180,0.05);
+    animation: logoPulse 3s ease-in-out infinite;
+  }
+  .logo-mark svg { color: var(--accent); }
+  @keyframes logoPulse {
+    0%, 100% { box-shadow: 0 0 24px rgba(0,255,180,0.3), inset 0 0 16px rgba(0,255,180,0.05); }
+    50% { box-shadow: 0 0 40px rgba(0,255,180,0.5), inset 0 0 24px rgba(0,255,180,0.1); }
+  }
+  .header-title h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem; font-weight: 900;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 40%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-title p {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid rgba(0,255,180,0.2);
+    border-radius: 100px;
+    background: rgba(0,255,180,0.05);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .pulse-dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+  }
+  .header-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* Top stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 2fr;
+    gap: 16px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+    backdrop-filter: blur(20px);
+  }
+  .stat-card:hover {
+    border-color: var(--border-glow);
+    transform: translateY(-2px);
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .stat-card:hover::after { opacity: 1; }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .stat-label span { display: block; width: 20px; height: 1px; background: var(--muted); }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-delta {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .delta-up { color: var(--safe); }
+  .delta-down { color: var(--danger); }
+
+  /* Accuracy card */
+  .accuracy-card {
+    position: relative;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .accuracy-ring-wrap {
+    position: absolute;
+    top: 50%; right: 28px;
+    transform: translateY(-50%);
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-track { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 6; }
+  .ring-fill {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 22;
+    animation: ringFill 2s 0.5s ease both;
+  }
+  @keyframes ringFill {
+    from { stroke-dashoffset: 220; }
+    to { stroke-dashoffset: 22; }
+  }
+  .ring-label {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .ring-label span:first-child {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--accent);
+  }
+  .ring-label span:last-child {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Main body grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 16px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .left-col { display: flex; flex-direction: column; gap: 16px; }
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Decision Log */
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    backdrop-filter: blur(20px);
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  .log-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2), transparent);
+    border-radius: 0 0 0 18px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--danger);
+    letter-spacing: 0.15em;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,75,110,0.3);
+    border-radius: 100px;
+    background: rgba(255,75,110,0.05);
+  }
+  .live-badge .pulse-dot { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+  /* Table header */
+  .log-cols {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .log-col-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* Log entries */
+  .log-entry {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    animation: entrySlide 0.4s ease both;
+    transition: background 0.2s;
+    border-radius: 8px;
+    padding: 12px 10px;
+    cursor: default;
+  }
+  .log-entry:hover { background: rgba(255,255,255,0.03); }
+  @keyframes entrySlide {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .entry-content { font-size: 0.82rem; color: rgba(255,255,255,0.85); line-height: 1.4; }
+  .entry-meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .verdict.real {
+    background: rgba(0,255,180,0.08);
+    color: var(--safe);
+    border: 1px solid rgba(0,255,180,0.2);
+  }
+  .verdict.fake {
+    background: rgba(255,75,110,0.08);
+    color: var(--danger);
+    border: 1px solid rgba(255,75,110,0.2);
+  }
+  .verdict.unverified {
+    background: rgba(255,184,0,0.08);
+    color: var(--warn);
+    border: 1px solid rgba(255,184,0,0.2);
+  }
+  .confidence {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.5);
+    text-align: right;
+  }
+  .conf-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease;
+  }
+  .conf-fill.high { background: var(--safe); }
+  .conf-fill.low { background: var(--danger); }
+  .conf-fill.mid { background: var(--warn); }
+
+  /* Waveform chart */
+  .wave-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+  }
+  .wave-canvas { width: 100%; height: 80px; }
+  .wave-stats {
+    display: flex; gap: 24px; margin-top: 16px;
+  }
+  .wave-stat { font-size: 0.78rem; color: var(--muted); }
+  .wave-stat strong { color: var(--text); font-weight: 600; display: block; font-size: 0.92rem; }
+
+  /* Right col cards */
+  .neural-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .neural-card:hover {
+    border-color: var(--border-glow);
+    transform: translateY(-2px);
+  }
+
+  /* Threat Radar */
+  .radar-wrap {
+    display: flex; align-items: center; justify-content: center;
+    margin: 20px 0;
+  }
+
+  /* Category breakdown */
+  .breakdown-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .breakdown-row { display: flex; align-items: center; gap: 12px; }
+  .breakdown-label { font-size: 0.76rem; color: var(--muted); width: 80px; flex-shrink: 0; }
+  .breakdown-bar-wrap { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+  .breakdown-bar { height: 100%; border-radius: 10px; animation: barGrow 1.2s ease both; }
+  @keyframes barGrow { from { width: 0 !important; } }
+  .breakdown-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* Info tiles */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .info-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+  .info-tile:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+  .info-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, rgba(0,255,180,0.04), transparent 70%);
+    pointer-events: none;
+  }
+  .tile-icon {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.8;
+  }
+  .tile-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tile-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .tile-sub {
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin-top: 4px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+  /* Glitch animation for the title */
+  @keyframes glitch {
+    0%, 100% { text-shadow: none; }
+    92% { text-shadow: none; }
+    93% { text-shadow: 2px 0 var(--accent2), -2px 0 var(--accent3); }
+    94% { text-shadow: none; }
+    96% { text-shadow: -2px 0 var(--accent2); }
+    97% { text-shadow: none; }
+  }
+
+  .glitch-text { animation: glitch 5s infinite; }
+
+  /* Tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%; transform: translateX(-50%);
+    background: #111;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(0,200,255,0.08);
+    border: 1px solid rgba(0,200,255,0.15);
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-mark">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+        </svg>
+      </div>
+      <div class="header-title">
+        <h1 class="glitch-text">TRUTH SHIELD</h1>
+        <p>Neural Defense v3.0 &nbsp;·&nbsp; All Systems Optimal &nbsp;·&nbsp; Threat Level: LOW</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="pulse-dot"></div>
+        LIVE MONITORING
+      </div>
+      <div class="header-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+
+    <div class="stat-card" data-tip="Total scans in current cycle">
+      <div class="stat-label"><span></span>Scan Volume</div>
+      <div class="stat-value" id="scanVol">1.2M</div>
+      <div class="stat-delta delta-up">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+        +12% this week
+      </div>
+    </div>
+
+    <div class="stat-card" data-tip="Global network rank">
+      <div class="stat-label"><span></span>Shield Rank</div>
+      <div class="stat-value">#042</div>
+      <div class="stat-delta delta-up">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+        Top 1% Global
+      </div>
+    </div>
+
+    <div class="stat-card" data-tip="Fake news blocked today">
+      <div class="stat-label"><span></span>Blocked Today</div>
+      <div class="stat-value" id="blockedCount">8.4K</div>
+      <div class="stat-delta delta-down">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        -3.2% vs yesterday
+      </div>
+    </div>
+
+    <div class="stat-card accuracy-card" data-tip="Average model confidence across verified verdicts">
+      <div>
+        <div class="stat-label"><span></span>Model Accuracy</div>
+        <div class="stat-value">98.9%</div>
+        <div class="stat-delta delta-up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          +0.3% from last epoch
+        </div>
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span class="tag">BERT</span><span class="tag">GPT-4o</span><span class="tag">LLAMA3</span><span class="tag">ENSEMBLE</span>
+        </div>
+      </div>
+      <div class="accuracy-ring-wrap">
+        <svg class="ring-svg" width="110" height="110" viewBox="0 0 80 80">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00ffb4"/>
+              <stop offset="100%" stop-color="#00c8ff"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-track" cx="40" cy="40" r="35"/>
+          <circle class="ring-fill" cx="40" cy="40" r="35"/>
+        </svg>
+        <div class="ring-label">
+          <span>98.9%</span>
+          <span>ACCURACY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT COL -->
+    <div class="left-col">
+
+      <!-- Waveform / Activity -->
+      <div class="wave-card">
+        <div class="card-header">
+          <div class="card-title">Scan Activity — 24h</div>
+          <div style="display:flex; gap:16px;">
+            <span style="font-size:0.7rem; color:var(--accent); font-family:'Space Mono',monospace; display:flex; align-items:center; gap:5px;">
+              <span style="display:inline-block;width:20px;height:2px;background:var(--accent);border-radius:2px;"></span> VERIFIED
+            </span>
+            <span style="font-size:0.7rem; color:var(--danger); font-family:'Space Mono',monospace; display:flex; align-items:center; gap:5px;">
+              <span style="display:inline-block;width:20px;height:2px;background:var(--danger);border-radius:2px;"></span> FLAGGED
+            </span>
+          </div>
+        </div>
+        <canvas id="waveCanvas" class="wave-canvas"></canvas>
+        <div class="wave-stats">
+          <div class="wave-stat"><strong id="peakTime">03:42 UTC</strong>Peak Time</div>
+          <div class="wave-stat"><strong>142K/hr</strong>Max Rate</div>
+          <div class="wave-stat"><strong>2.3ms</strong>Avg Latency</div>
+          <div class="wave-stat"><strong>99.97%</strong>Uptime</div>
+        </div>
+      </div>
+
+      <!-- Decision Log -->
+      <div class="log-card">
+        <div class="card-header">
+          <div class="card-title">Live Decision Log</div>
+          <div class="live-badge"><div class="pulse-dot"></div>REAL-TIME</div>
+        </div>
+        <div class="log-cols">
+          <div class="log-col-label">Content</div>
+          <div class="log-col-label">Verdict</div>
+          <div class="log-col-label" style="text-align:right">Confidence</div>
+        </div>
+        <div id="logFeed"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="right-col">
+
+      <!-- Neural Link -->
+      <div class="neural-card">
+        <div class="card-header">
+          <div class="card-title">Neural Link</div>
+          <div class="status-pill" style="font-size:0.6rem;padding:5px 12px;">
+            <div class="pulse-dot"></div>ACTIVE
+          </div>
+        </div>
+        <p style="font-size:0.78rem; color:var(--muted); line-height:1.6; margin-bottom:18px;">
+          Multilingual transformer monitoring 847 global streams with gated fusion. Processing <span style="color:var(--accent);">English, Mandarin, Arabic, Hindi, Spanish</span> in real-time.
+        </p>
+        <!-- Radar SVG -->
+        <div class="radar-wrap">
+          <canvas id="radarCanvas" width="200" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Category Breakdown -->
+      <div class="neural-card">
+        <div class="card-header">
+          <div class="card-title">Threat Categories</div>
+          <span style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--muted);">LAST 7D</span>
+        </div>
+        <div class="breakdown-list">
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:0.72rem;color:var(--muted);">Health</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:72%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div></div>
+            <div class="breakdown-val">72%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:0.72rem;color:var(--muted);">Politics</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:58%;background:linear-gradient(90deg,var(--accent2),#9b59ff);animation-delay:0.1s"></div></div>
+            <div class="breakdown-val">58%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:0.72rem;color:var(--muted);">Finance</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:43%;background:linear-gradient(90deg,var(--warn),#ff8c00);animation-delay:0.2s"></div></div>
+            <div class="breakdown-val">43%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:0.72rem;color:var(--muted);">Science</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:29%;background:linear-gradient(90deg,var(--danger),#ff8040);animation-delay:0.3s"></div></div>
+            <div class="breakdown-val">29%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:0.72rem;color:var(--muted);">Other</div>
+            <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:18%;background:linear-gradient(90deg,var(--muted),#3a4a5a);animation-delay:0.4s"></div></div>
+            <div class="breakdown-val">18%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Tiles -->
+      <div class="info-grid">
+        <div class="info-tile">
+          <span class="tile-icon">🌐</span>
+          <div class="tile-label">Coverage</div>
+          <div class="tile-value">Global</div>
+          <div class="tile-sub">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+            194 countries
+          </div>
+        </div>
+        <div class="info-tile">
+          <span class="tile-icon">⚙️</span>
+          <div class="tile-label">Engine</div>
+          <div class="tile-value">v3.0.4</div>
+          <div class="tile-sub" style="color:var(--safe);">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+            Up to date
+          </div>
+        </div>
+        <div class="info-tile">
+          <span class="tile-icon">🔗</span>
+          <div class="tile-label">Sources</div>
+          <div class="tile-value">12,400+</div>
+          <div class="tile-sub">indexed feeds</div>
+        </div>
+        <div class="info-tile">
+          <span class="tile-icon">⚡</span>
+          <div class="tile-label">Latency</div>
+          <div class="tile-value">2.3ms</div>
+          <div class="tile-sub" style="color:var(--safe);">Optimal</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CURSOR ─────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX - 4 + 'px';
+  cur.style.top = e.clientY - 4 + 'px';
+  ring.style.left = e.clientX - 16 + 'px';
+  ring.style.top = e.clientY - 16 + 'px';
+});
+document.addEventListener('mousedown', () => { cur.style.transform = 'scale(2)'; ring.style.transform = 'scale(0.8) translate(-12px,-12px)'; });
+document.addEventListener('mouseup', () => { cur.style.transform = 'scale(1)'; ring.style.transform = 'scale(1) translate(-12px,-12px)'; });
+
+// ─── CLOCK ──────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toUTCString().slice(17, 25) + ' UTC';
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ─── SCAN COUNTER ───────────────────────────────────────────────────
+let scanBase = 1200000;
+setInterval(() => {
+  scanBase += Math.floor(Math.random() * 300 + 100);
+  const v = (scanBase / 1e6).toFixed(1);
+  document.getElementById('scanVol').textContent = v + 'M';
+}, 2000);
+
+// ─── WAVEFORM CHART ─────────────────────────────────────────────────
+const wc = document.getElementById('waveCanvas');
+const ctx = wc.getContext('2d');
+function resizeWave() { wc.width = wc.offsetWidth * devicePixelRatio; wc.height = wc.offsetHeight * devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio); }
+resizeWave();
+window.addEventListener('resize', resizeWave);
+
+const pts = Array.from({length:48}, (_,i) => ({ v: Math.random()*0.5+0.3, f: Math.random()*0.2 }));
+let tick = 0;
+function drawWave() {
+  const W = wc.offsetWidth, H = wc.offsetHeight;
+  ctx.clearRect(0, 0, W, H);
+  tick++;
+  // Add new point
+  pts.push({ v: Math.random()*0.6+0.2, f: Math.random()*0.15 });
+  if (pts.length > 60) pts.shift();
+
+  const step = W / (pts.length - 1);
+
+  // Verified fill
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = i * step;
+    const y = H - p.v * (H * 0.85) - H * 0.07;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, 'rgba(0,255,180,0.15)');
+  grad.addColorStop(1, 'rgba(0,255,180,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Verified line
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = i * step;
+    const y = H - p.v * (H * 0.85) - H * 0.07;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = 'rgba(0,255,180,0.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Flagged line (lower amplitude)
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = i * step;
+    const y = H - p.f * (H * 0.85) - H * 0.07;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = 'rgba(255,75,110,0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  requestAnimationFrame(drawWave);
+}
+drawWave();
+
+// ─── RADAR ──────────────────────────────────────────────────────────
+const rc = document.getElementById('radarCanvas');
+const rctx = rc.getContext('2d');
+const cx = 100, cy = 100, R = 80;
+const categories = ['Health','Politic','Finance','Science','Social','Tech'];
+const vals = [0.72, 0.58, 0.43, 0.29, 0.5, 0.65];
+let radarAngle = 0;
+
+function drawRadar() {
+  rctx.clearRect(0, 0, 200, 200);
+  const sides = categories.length;
+  const step = (Math.PI * 2) / sides;
+
+  // Grid rings
+  [0.25, 0.5, 0.75, 1].forEach(r => {
+    rctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = i * step - Math.PI / 2;
+      const x = cx + Math.cos(a) * R * r;
+      const y = cy + Math.sin(a) * R * r;
+      i === 0 ? rctx.moveTo(x,y) : rctx.lineTo(x,y);
+    }
+    rctx.closePath();
+    rctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    rctx.lineWidth = 1;
+    rctx.stroke();
+  });
+
+  // Spokes
+  for (let i = 0; i < sides; i++) {
+    const a = i * step - Math.PI / 2;
+    rctx.beginPath();
+    rctx.moveTo(cx, cy);
+    rctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+    rctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    rctx.lineWidth = 1;
+    rctx.stroke();
+    // Labels
+    const lx = cx + Math.cos(a) * (R + 16);
+    const ly = cy + Math.sin(a) * (R + 16);
+    rctx.fillStyle = 'rgba(120,140,160,0.9)';
+    rctx.font = '9px Space Mono, monospace';
+    rctx.textAlign = 'center';
+    rctx.textBaseline = 'middle';
+    rctx.fillText(categories[i], lx, ly);
+  }
+
+  // Data polygon
+  rctx.beginPath();
+  vals.forEach((v, i) => {
+    const a = i * step - Math.PI / 2;
+    const x = cx + Math.cos(a) * R * v;
+    const y = cy + Math.sin(a) * R * v;
+    i === 0 ? rctx.moveTo(x, y) : rctx.lineTo(x, y);
+  });
+  rctx.closePath();
+  const grd = rctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  grd.addColorStop(0, 'rgba(0,255,180,0.3)');
+  grd.addColorStop(1, 'rgba(0,200,255,0.05)');
+  rctx.fillStyle = grd;
+  rctx.fill();
+  rctx.strokeStyle = 'rgba(0,255,180,0.7)';
+  rctx.lineWidth = 1.5;
+  rctx.stroke();
+
+  // Scan sweep line
+  const sa = radarAngle - Math.PI / 2;
+  const grad2 = rctx.createLinearGradient(cx, cy, cx + Math.cos(sa)*R, cy + Math.sin(sa)*R);
+  grad2.addColorStop(0, 'rgba(0,255,180,0.4)');
+  grad2.addColorStop(1, 'transparent');
+  rctx.beginPath();
+  rctx.moveTo(cx, cy);
+  rctx.arc(cx, cy, R, sa - 0.5, sa);
+  rctx.closePath();
+  rctx.fillStyle = grad2;
+  rctx.fill();
+  rctx.beginPath();
+  rctx.moveTo(cx, cy);
+  rctx.lineTo(cx + Math.cos(sa)*R, cy + Math.sin(sa)*R);
+  rctx.strokeStyle = 'rgba(0,255,180,0.9)';
+  rctx.lineWidth = 1.5;
+  rctx.stroke();
+
+  radarAngle = (radarAngle + 0.02) % (Math.PI * 2);
+  requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+// ─── LIVE DECISION LOG ──────────────────────────────────────────────
+const headlines = [
+  { text: "Quantum computing breakthrough reported in Munich research lab.", src: "RealScience", verdict: "real", conf: 98 },
+  { text: "Global financial systems to shut down for 48 hours next week.", src: "UnknownSrc", verdict: "fake", conf: 99 },
+  { text: "Neural networks now detect fake news with sub-millisecond latency.", src: "RealTech", verdict: "real", conf: 94 },
+  { text: "WHO announces cure for Alzheimer's disease discovered in Brazil.", src: "HealthWatch", verdict: "fake", conf: 97 },
+  { text: "New carbon capture technology removes 1MT CO₂ per day.", src: "ClimateNow", verdict: "real", conf: 91 },
+  { text: "Stock market to crash 80% before end of fiscal quarter.", src: "FinanceAlert", verdict: "fake", conf: 99 },
+  { text: "CERN detects new particle confirming dark matter hypothesis.", src: "PhysicsToday", verdict: "unverified", conf: 67 },
+  { text: "UN passes binding AI treaty signed by 142 nations.", src: "GlobalNews", verdict: "unverified", conf: 74 },
+  { text: "Deepfake detection accuracy surpasses 99.9% on benchmark.", src: "AIResearch", verdict: "real", conf: 96 },
+  { text: "5G towers linked to spontaneous combustion of household pets.", src: "ConspiraSite", verdict: "fake", conf: 99 },
+];
+const timeAgo = ["01m ago","02m ago","04m ago","06m ago","08m ago","11m ago","14m ago","17m ago","20m ago","24m ago"];
+
+function buildEntry(h, t, animate=true) {
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.style.animationDelay = animate ? '0s' : '-1s';
+  const vClass = h.verdict;
+  const vLabel = h.verdict === 'real' ? '✓ REAL' : h.verdict === 'fake' ? '✗ FAKE' : '? UNVERIFIED';
+  const confClass = h.conf > 80 ? (h.verdict === 'fake' ? 'low' : 'high') : 'mid';
+  el.innerHTML = `
+    <div>
+      <div class="entry-content">${h.text}</div>
+      <div class="entry-meta">${h.src} &nbsp;·&nbsp; ${t}</div>
+    </div>
+    <div><span class="verdict ${vClass}">${vLabel}</span></div>
+    <div class="confidence">
+      ${h.conf}%
+      <div class="conf-bar"><div class="conf-fill ${confClass}" style="width:${h.conf}%"></div></div>
+    </div>
+  `;
+  return el;
+}
+
+const feed = document.getElementById('logFeed');
+// Initial load
+headlines.slice(0, 6).forEach((h, i) => {
+  feed.appendChild(buildEntry(h, timeAgo[i], false));
+});
+
+// Live updates
+let hIdx = 6;
+setInterval(() => {
+  const h = headlines[hIdx % headlines.length];
+  hIdx++;
+  const entry = buildEntry(h, "just now");
+  feed.insertBefore(entry, feed.firstChild);
+  if (feed.children.length > 8) feed.removeChild(feed.lastChild);
+}, 4000);
+
+// Blocked counter animation
+let bc = 8400;
+setInterval(() => {
+  bc += Math.floor(Math.random() * 5 + 1);
+  const v = bc >= 1000 ? (bc / 1000).toFixed(1) + 'K' : bc;
+  document.getElementById('blockedCount').textContent = v;
+}, 3000);
+</script>
+</body>
+</html>
