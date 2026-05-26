@@ -20,7 +20,7 @@ from src.knowledge_buffer import KnowledgeBuffer
 import onnxruntime as ort
 import numpy as np
 
-app = FastAPI(title="Truth Shield SOTA API", description="High-performance Multilingual Fake News Detection Engine")
+app = FastAPI(title="FactFinder SOTA API", description="High-performance Multilingual Fake News Detection Engine")
 
 # --- ADVANCED CORS CONFIGURATION ---
 app.add_middleware(

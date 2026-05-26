@@ -1,18 +1,16 @@
-# 🛡️ Truth Shield: SOTA Multilingual Fake News Detection Ecosystem
+# FactFinder: Fake News Detection
 
-[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Transformers](https://img.shields.io/badge/Transformers-HF-FFD21E?style=flat-square)](https://github.com/huggingface/transformers)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+Welcome to **FactFinder**, a project I built to help detect fake news across multiple languages (English, Hindi, Urdu, Bengali). It uses a deep learning model to analyze text and source metadata, trying to figure out if a news piece is real or misleading.
 
-Welcome to **Truth Shield**, a production-grade, globally scalable fake news detection and misinformation tracking ecosystem. By combining State-of-the-Art (SOTA) multilingual NLP models with domain-adversarial learning, propagation velocity analytics, and explainable AI, Truth Shield provides robust, language-invariant fact verification.
+## How it works
 
----
+The core of the system is a neural network built with PyTorch. Instead of just looking at the text, the model also considers where the news came from (the source). 
 
-## 📐 System Architecture
-
-Truth Shield uses a multi-branch neural network optimized for text and source domain inputs. Below is the workflow diagram mapping the data from input ingestion through the language-adversarial learning layers to final explainable classification:
+Here's a breakdown of the approach:
+1. **Text processing**: Uses XLM-RoBERTa to understand the text in different languages.
+2. **Adversarial Training**: I added a Gradient Reversal Layer (GRL) during training. This basically forces the model to focus on the actual "deceptive" writing style rather than just memorizing language-specific quirks.
+3. **Fusion**: Combines the text features with source metadata.
+4. **Classification**: Outputs a probability score for whether the text is real or fake.
 
 ```mermaid
 graph TD
@@ -51,91 +49,72 @@ graph TD
     Output --> LIME["LIME Explanation Visualizer"]
 ```
 
----
+## Results
 
-## 📊 SOTA Evaluation Results
-
-The model has been evaluated on a representative validation dataset split of **15,000 multilingual samples** to produce publication-grade performance curves:
+I evaluated the model on a validation set of about 15,000 samples. It performs reasonably well at separating real vs. fake news. The `reports/` folder contains some performance graphs like ROC curves and confusion matrices if you want to dive into the numbers.
 
 ### 1. Sorted Prediction Confidence Curve
-Shows prediction confidence separated by actual class. A sharp, steep boundary demonstrates clean prediction threshold separation:
 ![Sorted Prediction Confidence Curve](reports/sorted_confidence_curve.png)
 
 ### 2. Confidence Density (KDE Plot)
-Visualizes prediction clustering. The model exhibits high confidence, clustering true fake news close to $0.0$ and true real news close to $1.0$:
 ![Confidence Density Plot](reports/confidence_density_kde.png)
 
 ### 3. ROC & Precision-Recall Curves
-ROC-AUC performance metrics and precision-recall trade-offs across decision thresholds:
 ![ROC and Precision-Recall Curves](reports/performance_curves.png)
 
 ### 4. Normalized Confusion Matrix Heatmap
-Annotated matrix verifying classification accuracy, sensitivity, and specificity:
 ![Confusion Matrix Heatmap](reports/confusion_matrix.png)
 
----
+## Tech Stack
 
-## 🚀 Key Technical Features
+- **Model**: PyTorch, HuggingFace Transformers (XLM-RoBERTa)
+- **Backend API**: FastAPI (handles inference and basic caching)
+- **Frontend**: Streamlit (a web dashboard to test out the model)
+- **Explainability**: Uses LIME to highlight which words contributed most to the model's decision.
 
-| Feature | Architecture / Technology | Detail & Benefit |
-| :--- | :--- | :--- |
-| **Multilingual Engine** | XLM-RoBERTa (Base) | Native support for Hindi, English, Urdu, and Bengali with cross-lingual semantic understanding. |
-| **Domain-Adversarial GRL** | Gradient Reversal Layer | Erases language-specific artifacts during training, forcing the classifier to focus purely on deceptive writing style. |
-| **Lightweight Inference** | Checkpoint Pruning | Strips unused multimodal parameters (e.g. ResNet-18) to deliver high-speed inference on CPU-only environments. |
-| **Fact-Check Integration** | Neural Knowledge Buffer | Validates incoming claims against verified historical truth datasets using vector search. |
-| **Explainable AI (XAI)** | LIME (Local Interpretable Explainer) | Highlights word-level classification triggers in red (fake signal) and green (real signal) inside the UI. |
-| **Bot Propagation Analytics** | Virality Velocity Tracker | Computes real-time risk scores based on propagation characteristics (retweets, accounts credibility). |
+## Repository Structure
 
----
+- `src/model.py` - Contains the PyTorch model architecture.
+- `src/train.py` - The training loop and validation script.
+- `api/` - FastAPI backend for serving the model.
+- `app.py` - Streamlit dashboard.
+- `scratch/` - Scripts for generating evaluation graphs.
+- `extension/` - A Chrome extension for checking news in the browser.
 
-## 🛠️ Folder Structure
+## Getting Started
 
-* `src/model.py` - Core PyTorch implementation of the Adversarial Fake News Model (includes `lightweight` configurations).
-* `src/train.py` - Core training and validation script tracking validation accuracy, F1-Fake, and F1-Real over epochs.
-* `scratch/generate_paper_graphs.py` - High-performance pre-tokenized visualization generator using CPU thread optimization.
-* `api/` - Production-grade FastAPI backend supporting inference caching, fact-verification, and propagation scoring.
-* `app.py` - Streamlit Web Dashboard visualizing explanations and verdicts.
-* `extension/` - Manifest V3 Chrome browser extension highlighting social media feeds.
+### 1. Setup
 
----
+First, clone the repository and set up a virtual environment:
 
-## 🏁 Quick Start & Usage
-
-### 1. Set Up Environment
-Initialize the virtual environment and install all dependencies:
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/truth-shield.git
-cd truth-shield
+git clone https://github.com/your-username/factfinder.git
+cd factfinder
 
-# Activate virtual environment
+# Activate your virtual environment (Windows example)
 myenv\Scripts\activate
 
-# Install requirements
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Run SOTA Evaluation Plot Suite
-Generate the evaluation figures based on 15,000 validation samples:
-```bash
-python scratch/generate_paper_graphs.py
-```
-This output is written to the `reports/` folder.
-
-### 3. Launch Streamlit Web App
-Run the interactive dashboard to write/paste news articles and run live verification:
+### 2. Run the Web Dashboard
+The easiest way to test the model is through the Streamlit app. This will start a local web server where you can paste news articles:
 ```bash
 streamlit run app.py
 ```
 
-### 4. Start FastAPI Production Server
-Initialize the backend API that powers the browser extension:
+### 3. Run the Backend API
+If you want to use the API directly or power the browser extension:
 ```bash
 python start_production.py
 ```
 
----
+### 4. Generate Evaluation Graphs
+If you want to recreate the performance plots:
+```bash
+python scratch/generate_paper_graphs.py
+```
 
-**Developed & Maintained by**: Khan Zeeshan  
-**Model Version**: v5.0 (Enterprise-SaaS Autoadaptive Release)  
-**Academic Reference**: Domain-Adversarial Multilingual Misinformation Networks  
+---
+**Developed by**: Khan Zeeshan

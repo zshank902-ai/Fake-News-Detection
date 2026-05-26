@@ -87,7 +87,7 @@ with col1:
 with col2:
     st.subheader("Step 3: Analyze")
     num_passes = st.slider("Model Intelligence (MC Dropout Passes):", 5, 20, 10)
-    analyze_btn = st.button("🚀 Execute Truth Shield")
+    analyze_btn = st.button("🚀 Execute FactFinder")
 
 if analyze_btn:
     if input_text.strip() == "":
